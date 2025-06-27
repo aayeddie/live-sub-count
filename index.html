@@ -20,6 +20,7 @@
       align-items: flex-start;
       font-family: Arial, sans-serif;
       height: 100vh;
+      font-size: 16px; /* base size */
     }
 
     #subscriber-count {
@@ -31,14 +32,14 @@
       height: 120px;
       width: 100%;
       position: absolute;
-      top: -24px;
+      top: -1.5em;
       left: 0;
       margin: 0;
     }
 
     #number {
       display: flex;
-      gap: 4px;
+      gap: 0.25em;
       margin: 0;
       position: relative;
       top: 0;
@@ -46,8 +47,8 @@
 
     .digit-container {
       background: white;
-      padding: 3px;
-      border-radius: 6px;
+      padding: 0.2em;
+      border-radius: 0.3em;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -62,11 +63,11 @@
     }
 
     .digit {
-      font-size: 180px;
+      font-size: 11.25em; /* = 180px at 16px base */
     }
 
     .comma {
-      font-size: 108px;
+      font-size: 6.75em; /* = 108px at 16px base */
     }
 
     .scroll-up {
@@ -88,13 +89,11 @@
     }
 
     @media (max-width: 768px) {
-      .digit { font-size: 160px; }
-      .comma { font-size: 88px; }
+      body { font-size: 14px; }
     }
 
     @media (max-width: 480px) {
-      .digit { font-size: 120px; }
-      .comma { font-size: 68px; }
+      body { font-size: 12px; }
     }
   </style>
 </head>
