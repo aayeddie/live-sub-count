@@ -17,57 +17,42 @@
       background-color: white;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
+      align-items: center;
       font-family: Arial, sans-serif;
-      height: 100vh;
-      font-size: 16px; /* base size */
+      font-size: 16px;
     }
 
     #subscriber-count {
       font-weight: bold;
-      overflow: visible;
+      overflow: hidden;
       display: flex;
       justify-content: center;
-      align-items: flex-start;
-      height: 120px;
+      align-items: center;
       width: 100%;
-      position: absolute;
-      top: -1.5em;
-      left: 0;
       margin: 0;
     }
 
     #number {
       display: flex;
-      gap: 0.25em;
-      margin: 0;
-      position: relative;
-      top: 0;
-    }
-
-    .digit-container {
-      background: white;
-      padding: 0.2em;
-      border-radius: 0.3em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .digit, .comma {
-      color: black;
-      line-height: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      align-items: flex-end;
+      gap: 0.15em;
     }
 
     .digit {
-      font-size: 2.25em; /* reduced from 11.25em */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.25em; /* was 180px → now 36px @ base 16px */
+      line-height: 1;
     }
 
     .comma {
-      font-size: 1.35em; /* reduced from 6.75em */
+      font-size: 1.35em; /* was 108px → now 21.6px @ base 16px */
+      padding: 0 0.1em;
+      line-height: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
     }
 
     .scroll-up {
@@ -112,71 +97,85 @@
 
     function fetchSubscriberCount() {
       fetch(`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`)
-        .then(r => r.json())
+        .then(response => response.json())
         .then(data => {
-          if (data.items?.length) {
-            const count = +data.items[0].statistics.subscriberCount;
+          if (data.items && data.items.length > 0) {
+            let count = parseInt(data.items[0].statistics.subscriberCount);
             actualCount = count;
 
             if (!initialLoadDone) {
-              updateDigits(randomFake(count), true);
+              let fakeCount = randomizeFakeDisplay(count);
+              updateDigits(fakeCount, true);
               initialLoadDone = true;
             } else if (count !== lastCount) {
               updateDigits(count, false);
             }
+
             lastCount = count;
           } else {
             document.getElementById('number').innerText = 'Channel not found.';
           }
         })
-        .catch(() => {
+        .catch(error => {
+          console.error('Error fetching subscriber count:', error);
           document.getElementById('number').innerText = 'Error fetching data.';
         });
     }
 
-    function randomFake(count) {
-      const d = count.toString().split('');
+    function randomizeFakeDisplay(count) {
+      let digits = count.toString().split('');
       if (count >= 10000) {
-        d[d.length - 1] = `${Math.floor(Math.random() * 10)}`;
-        d[d.length - 2] = `${Math.floor(Math.random() * 10)}`;
+        digits[digits.length - 1] = Math.floor(Math.random() * 10).toString();
+        digits[digits.length - 2] = Math.floor(Math.random() * 10).toString();
       } else {
-        d[d.length - 1] = `${Math.floor(Math.random() * 10)}`;
+        digits[digits.length - 1] = Math.floor(Math.random() * 10).toString();
       }
-      return +d.join('');
+      return parseInt(digits.join(''));
     }
 
     function updateDigits(count, animateAll = false) {
-      const chars = count.toLocaleString().split('');
-      const numEl = document.getElementById('number');
-      numEl.innerHTML = '';
+      const formatted = count.toLocaleString();
+      const chars = formatted.split('');
+      const numberElement = document.getElementById('number');
+      numberElement.innerHTML = '';
 
-      chars.forEach((ch, i) => {
-        const container = document.createElement('div');
-        container.className = 'digit-container';
+      for (let i = 0; i < chars.length; i++) {
+        const char = chars[i];
+        const digitElement = document.createElement('div');
 
-        const el = document.createElement('div');
-        el.innerText = ch;
-
-        if (ch === ',') {
-          el.className = 'comma';
+        if (char === ',') {
+          digitElement.innerText = ',';
+          digitElement.classList.add('comma');
+          if (animateAll || currentDigits[i] !== char) {
+            digitElement.classList.add('scroll-down');
+          }
         } else {
-          el.className = 'digit';
+          digitElement.classList.add('digit');
+          if (animateAll || currentDigits[i] !== char) {
+            animateDigit(digitElement, currentDigits[i], char);
+          }
+          digitElement.innerText = char;
         }
 
-        if (animateAll || currentDigits[i] !== ch) {
-          el.classList.add(ch > (currentDigits[i] || '0') ? 'scroll-up' : 'scroll-down');
-        }
-
-        container.appendChild(el);
-        numEl.appendChild(container);
-      });
+        numberElement.appendChild(digitElement);
+      }
 
       currentDigits = chars;
     }
 
+    function animateDigit(digitElement, oldDigit, newDigit) {
+      if (oldDigit == null || oldDigit === ',') {
+        digitElement.classList.add('scroll-down');
+      } else {
+        const animationType = newDigit > oldDigit ? 'scroll-up' : 'scroll-down';
+        digitElement.classList.add(animationType);
+      }
+    }
+
     function randomizeOnesPlace() {
-      if (!initialLoadDone || !actualCount) return;
-      updateDigits(randomFake(actualCount), false);
+      if (!initialLoadDone || actualCount === 0) return;
+      let fakeCount = randomizeFakeDisplay(actualCount);
+      updateDigits(fakeCount, false);
     }
 
     fetchSubscriberCount();
