@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>YouTube Subscriber Count</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: white;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+    }
+
+    #subscriber-count {
+      font-weight: bold;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      height: 120px;
+      width: 100%;
+      position: absolute;
+      top: -24px;
+      left: 0;
+      margin: 0;
+    }
+
+    #number {
+      display: flex;
+      margin: 0;
+      position: relative;
+      top: 0;
+    }
+
+    .digit-container {
+      background: white;
+      padding: 3px;
+      margin: 1px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .digit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      overflow: hidden;
+      font-size: 180px;
+      position: relative;
+    }
+
+    .comma {
+      font-size: 108px;
+      padding: 0 10px;
+      position: relative;
+      top: 65px;
+      line-height: 1;
+    }
+
+    .scroll-up {
+      animation: scroll-up 0.5s ease-out forwards;
+    }
+
+    .scroll-down {
+      animation: scroll-down 0.5s ease-out forwards;
+    }
+
+    @keyframes scroll-up {
+      0% { transform: translateY(100%); }
+      100% { transform: translateY(0); }
+    }
+
+    @keyframes scroll-down {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .digit { font-size: 160px; }
+      .comma { font-size: 88px; top: 50px; }
+    }
+
+    @media (max-width: 480px) {
+      .digit { font-size: 120px; }
+      .comma { font-size: 68px; top: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="subscriber-count">
+    <div id="number"></div>
+  </div>
+
+  <script>
+    const channelId = 'UCgSrywNqoqtC4nViMHk6L-g';
+    const apiKey = 'AIzaSyA7kJVhZMBaYK7XogAhuVt_mMvF00JAPU8';
+    let lastCount = 0;
+    let currentDigits = [];
+    let actualCount = 0;
+    let initialLoadDone = false;
+
+    function fetchSubscriberCount() {
+      fetch(`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.items && data.items.length > 0) {
+            let count = parseInt(data.items[0].statistics.subscriberCount);
+            actualCount = count;
+
+            if (!initialLoadDone) {
+              let fakeCount = randomizeFakeDisplay(count);
+              updateDigits(fakeCount, true);
+              initialLoadDone = true;
+            } else if (count !== lastCount) {
+              updateDigits(count, false);
+            }
+
+            lastCount = count;
+          } else {
+            document.getElementById('number').innerText = 'Channel not found.';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching subscriber count:', error);
+          document.getElementById('number').innerText = 'Error fetching data.';
+        });
+    }
+
+    function randomizeFakeDisplay(count) {
+      let digits = count.toString().split('');
+      if (count >= 10000) {
+        digits[digits.length - 1] = Math.floor(Math.random() * 10).toString();
+        digits[digits.length - 2] = Math.floor(Math.random() * 10).toString();
+      } else {
+        digits[digits.length - 1] = Math.floor(Math.random() * 10).toString();
+      }
+      return parseInt(digits.join(''));
+    }
+
+    function updateDigits(count, animateAll = false) {
+      const formatted = count.toLocaleString();
+      const chars = formatted.split('');
+      const numberElement = document.getElementById('number');
+      numberElement.innerHTML = '';
+
+      for (let i = 0; i < chars.length; i++) {
+        const char = chars[i];
+        const container = document.createElement('div');
+        container.classList.add('digit-container');
+
+        const digitElement = document.createElement('div');
+
+        if (char === ',') {
+          digitElement.innerText = ',';
+          digitElement.classList.add('comma');
+        } else {
+          digitElement.classList.add('digit');
+          if (animateAll || currentDigits[i] !== char) {
+            animateDigit(digitElement, currentDigits[i], char);
+          }
+          digitElement.innerText = char;
+        }
+
+        container.appendChild(digitElement);
+        numberElement.appendChild(container);
+      }
+
+      currentDigits = chars;
+    }
+
+    function animateDigit(digitElement, oldDigit, newDigit) {
+      if (oldDigit == null || oldDigit === ',') {
+        digitElement.classList.add('scroll-down');
+      } else {
+        const animationType = newDigit > oldDigit ? 'scroll-up' : 'scroll-down';
+        digitElement.classList.add(animationType);
+      }
+    }
+
+    function randomizeOnesPlace() {
+      if (!initialLoadDone || actualCount === 0) return;
+      let fakeCount = randomizeFakeDisplay(actualCount);
+      updateDigits(fakeCount, false);
+    }
+
+    fetchSubscriberCount();
+    setInterval(fetchSubscriberCount, 20000);
+    setInterval(randomizeOnesPlace, 8000);
+  </script>
+</body>
+</html>
